@@ -62,6 +62,8 @@
 ;;; Code:
 
 (require 'org)
+(require 'seq)
+
 (defcustom org-git-program "git"
   "Name of the git executable used to follow git links."
   :type '(string)
@@ -73,8 +75,8 @@
 
 (defun org-gitbare-open (str)
   (let* ((strlist (org-git-split-string str))
-         (gitdir (first strlist))
-         (object (second strlist)))
+         (gitdir (seq-elt strlist 0))
+         (object (seq-elt strlist 1)))
     (org-git-open-file-internal gitdir object)))
 
 
@@ -96,11 +98,11 @@
 
 (defun org-git-open (str)
   (let* ((strlist (org-git-split-string str))
-         (filepath (first strlist))
-         (commit (second strlist))
+         (filepath (seq-elt strlist 0))
+         (commit (seq-elt strlist 1))
          (dirlist (org-git-find-gitdir (file-truename filepath)))
-         (gitdir (first dirlist))
-         (relpath (second dirlist)))
+         (gitdir (seq-elt dirlist 0))
+         (relpath (seq-elt dirlist 1)))
     (org-git-open-file-internal gitdir (concat commit ":" relpath))))
 
 
@@ -125,10 +127,10 @@
     (catch 'toplevel
       (while (not (file-exists-p (expand-file-name ".git" dir)))
         (let ((dirlist (org-git-split-dirpath dir)))
-          (when (string= (second dirlist) "") ; at top level
+          (when (string= (seq-elt dirlist 1) "") ; at top level
             (throw 'toplevel nil))
-          (setq dir (first dirlist)
-                relpath (concat (file-name-as-directory (second dirlist)) relpath))))
+          (setq dir (seq-elt dirlist 0)
+                relpath (concat (file-name-as-directory (seq-elt dirlist 1)) relpath))))
       (list (expand-file-name ".git" dir) relpath))))
 
 
@@ -171,7 +173,7 @@
 (defun org-git-create-git-link (file)
   "Create git link part to file at specific time"
   (interactive "FFile: ")
-  (let* ((gitdir (first (org-git-find-gitdir (file-truename file))))
+  (let* ((gitdir (seq-elt (org-git-find-gitdir (file-truename file)) 0))
          (branchname (org-git-get-current-branch gitdir))
          (timestring (format-time-string "%Y-%m-%d" (current-time))))
     (concat "git:" file "::" (org-git-create-searchstring branchname timestring))))
